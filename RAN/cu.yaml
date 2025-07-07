@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cu
+  namespace: my5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cu
+  template:
+    metadata:
+      labels:
+        app: cu
+      annotations:
+#        ovn.kubernetes.io/subnets: '[{"subnet": "cu-du-net", "ip_address": "10.53.10.4"}, {"subnet": "my5gs-subnet", "ip_address": "172.22.0.50"}]'
+        k8s.v1.cni.cncf.io/networks: my5gs/attachnet
+        attachnet.my5gs.ovn.kubernetes.io/ip_address: "10.53.10.4"
+        attachnet.my5gs.ovn.kubernetes.io/logical_switch: "attachnet"
+        ovn.kubernetes.io/ip_address: "172.22.0.50"  # Replace with your desired IP
+        ovn.kubernetes.io/logical_switch: "my5gs-subnet"  # Specify the subnet
+#        ovn.kubernetes.io/logical_switch: "macvlan"  # Specify the subnet
+#        ovn.kubernetes.io/ip_address: "10.53.10.4"  # Replace with your desired IP
+#        ovn.kubernetes.io/logical_switch: "cu-du-net"  # Specify the subnet
+        
+    spec:
+      containers:
+        - name: cu
+          image: localhost:5000/srsran-cu:v1
+          ports:
+            - containerPort: 38472
+              hostPort: 38472
+              protocol: SCTP
+#          args:
+#            - "24.04"  # OS_VERSION argument
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_NICE", "CAP_SYS_PTRACE"]
+          resources:
+            requests:
+              cpu: "1"
+          volumeMounts:
+            - mountPath: /dev/bus/usb
+              name: usb
+            - mountPath: /usr/share/uhd/images
+              name: uhd-images
+            - mountPath: /tmp
+              name: gnb-storage
+            - mountPath: /cu_ho.yml
+#              subPath: cu.yml
+              name: cu-config
+              readOnly: true
+          command: ["/bin/sh", "-c", "echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"]
+          command: ["srscu", "-c", "cu_ho.yml"]
+      volumes:
+        - name: usb
+          hostPath:
+            path: /dev/bus/usb
+        - name: uhd-images
+          hostPath:
+            path: /usr/share/uhd/images
+        - name: gnb-storage
+          emptyDir: {}
+        - name: cu-config
+          hostPath:
+            path: /home/lab/k3s/5gs/ran/config/cu_ho.yml
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cu
+  namespace: my5gs
+spec:
+  type: 
+  ports:
+    #    - protocol: TCP
+    #      port: 3000
+    #      targetPort: 3000
+    #      name: metrics
+    - protocol: SCTP
+      port: 38472
+      targetPort: 38472
+      name: sctp
+        #    - protocol: UDP
+        #      port: 2152
+        #      targetPort: 2152
+        #      name: fapi-u
+  selector:
+    app: cu
+      #  type: ClusterIP
+

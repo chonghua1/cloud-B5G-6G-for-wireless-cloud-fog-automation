@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: du-0
+  namespace: my5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: du-0
+  template:
+    metadata:
+      labels:
+        app: du-0
+      annotations:
+        ovn.kubernetes.io/ip_address: 172.22.0.52  # Replace with your desired IP
+        ovn.kubernetes.io/logical_switch: "my5gs-subnet"  # Specify the subnet
+    spec:
+#      hostNetwork: true
+      containers:
+        - name: du-0
+          image: localhost:5000/srsran-cu:v1
+#          args:
+#            - "24.04"  # OS_VERSION argument
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_NICE", "CAP_SYS_PTRACE"]
+          resources:
+            requests:
+              cpu: "2"
+          volumeMounts:
+            - mountPath: /dev/bus/usb
+              name: usb
+            - mountPath: /usr/local/share/uhd/
+              name: uhd-images
+#            - mountPath: /opt/uhd
+#              name: uhd
+            - mountPath: /tmp
+              name: gnb-storage
+            - mountPath: /du_ho_0.yml
+              name: du-config
+              readOnly: true
+          command: ["/bin/sh", "-c", "echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"]
+          command: ["srsdu", "-c", "du_ho_0.yml"]
+#          command: ["sleep", "100000"]
+          stdin: true
+          tty: true
+      volumes:
+        - name: usb
+          hostPath:
+            path: /dev/bus/usb
+        - name: uhd-images
+          hostPath:
+            path: /usr/local/share/uhd/
+            type: Directory
+        - name: uhd
+          hostPath:
+            path: /opt/uhd
+            type: Directory
+        - name: gnb-storage
+          emptyDir: {}
+        - name: du-config
+          hostPath:
+            path: /home/lab/k3s/5gs/ran/config/du_ho_0.yml
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: du-0
+  namespace: my5gs
+spec:
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: du-0
+  type: ClusterIP
+

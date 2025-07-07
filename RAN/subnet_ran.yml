@@ -1,0 +1,12 @@
+apiVersion: kubeovn.io/v1
+kind: Subnet
+metadata:
+  name: attachnet
+spec:
+  protocol: IPv4
+  provider: attachnet.my5gs.ovn
+  cidrBlock: 10.53.10.0/24
+  gateway: 10.53.10.1
+  excludeIps: ["10.53.10.1"]
+
+

@@ -1,0 +1,73 @@
+# Example config for a DU with one 20MHz TDD cell using a USRP as RF frontend.
+gnb_id: 531
+gnb_id_bit_length: 32
+gnb_du_id: 0
+f1ap:
+  cu_cp_addr: 10.53.10.4
+  bind_addr: 172.22.0.52
+nru:
+  bind_addr: 172.22.0.52
+
+ru_sdr:
+  device_driver: uhd
+  device_args: type=b200,num_recv_frames=64,num_send_frames=64,serial=32FCD7C
+    # device_args: type=x300,addr=192.168.40.2,channels=1,master_clock_rate=184.32e6,send_frame_size=8000,recv_frame_size=8000
+    #srate: 30.72
+  srate: 23.04
+    #  otw_format: sc12  
+  tx_gain: 80
+  rx_gain: 70
+
+cell_cfg:
+#  dl_arfcn: 368500
+  dl_arfcn: 650000
+  band: 78
+  channel_bandwidth_MHz: 20
+  common_scs: 30
+  plmn: "00101"
+  tac: 1
+  pci: 1
+  sector_id: 0
+#  pdcch:
+#    common:
+#      ss0_index: 0
+#      coreset0_index: 12
+#    dedicated:
+#      ss2_type: common
+#      dci_format_0_1_and_1_1: false
+#  prach:     
+#    prach_config_index: 1
+#
+  ssb:
+    ssb_period: 20
+  tdd_ul_dl_cfg:
+    dl_ul_tx_period: 5
+    nof_dl_slots: 3
+    nof_dl_symbols: 8
+    nof_ul_slots: 1
+    nof_ul_symbols: 2
+  pucch:
+    min_k1: 2
+  pusch:
+    min_k2: 2
+  slicing:
+    -
+      sst: 1
+#      sd: 0x000005
+    - 
+      sst: 1
+      sd: 0x000002
+
+
+log:
+  filename: /tmp/du.log
+  all_level: debug
+
+pcap:
+  mac_enable: false
+  mac_filename: /tmp/du_mac.pcap
+  f1ap_enable: false
+  f1ap_filename: /tmp/du_f1ap.pcap
+  f1u_enable: false
+  f1u_filename: /tmp/du_f1u.pcap
+

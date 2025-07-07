@@ -1,0 +1,58 @@
+# Example config for a locally deployed CU listening on the localhost interface for a DU connection
+gnb_id: 331
+gnb_id_bit_length: 32
+ran_node_name: cu_cp_02
+
+slicing:
+  -
+    sst: 1
+#    sd: 5
+  - 
+    sst: 1
+    sd: 2
+
+amf:
+  addr: 172.22.0.10
+  bind_addr: 172.22.0.60
+
+cu_cp:
+  inactivity_timer: 7200
+  plmns: "00101"
+  tacs: "1"
+    #  mobility:
+    #    trigger_handover_from_measurements: true
+    #    cells: 
+    #      - nr_cell_id: 0x2130
+    #        periodic_report_cfg_id: 1
+    #        ncells:
+    #          - nr_cell_id: 0x2131
+    #            report_configs: [ 2 ]
+    #      - nr_cell_id: 0x2131
+    #        periodic_report_cfg_id: 1
+    #        ncells:
+    #          - nr_cell_id: 0x2130 
+    #            report_configs: [ 2 ]
+    #    report_configs:
+    #      - report_cfg_id: 1
+    #        report_type: periodical
+    #        report_interval_ms: 480
+    #      - report_cfg_id: 2
+    #        report_type: event_triggered
+    #        a3_report_type: rsrp
+    #        a3_offset_db: 3
+    #        a3_hysteresis_db: 0
+    #        a3_time_to_trigger_ms: 100
+  f1ap:
+    bind_addr: 10.53.10.5
+
+cu_up:
+  nru:
+    bind_addr: 10.53.10.5
+
+log:
+  filename: /tmp/cu.log
+  all_level: debug
+
+pcap:
+  ngap_enable: false
+  ngap_filename: /tmp/cu_ngap.pcap
