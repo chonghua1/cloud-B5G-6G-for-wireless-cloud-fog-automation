@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodbdata
+  namespace: my5gs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # Adjust the size as needed
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+  namespace: my5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+      annotations:
+        ovn.kubernetes.io/ip_address: "172.22.0.2"  # Replace with your desired IP
+        ovn.kubernetes.io/logical_switch: "my5gs-subnet"
+    spec:
+#      nodeName: lab217-thinkcentre-neo-50q-gen-4
+      containers:
+        - name: mongo
+          image: mongo:6.0
+          command: ["mongod", "--bind_ip", "0.0.0.0"]
+          envFrom:
+            - configMapRef:
+                name: my5gs-config  # Reference your ConfigMap here
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongodbdata
+            - mountPath: /data/configdb
+              name: mongodbdata
+            - mountPath: /etc/timezone
+              name: timezone
+              readOnly: true
+            - mountPath: /etc/localtime
+              name: localtime
+              readOnly: true
+      volumes:
+        - name: mongodbdata
+          persistentVolumeClaim:
+            claimName: mongodbdata
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+spec:
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+  selector:
+    app: mongo
+  type: ClusterIP
+

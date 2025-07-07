@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upf
+  namespace: my5gs
+  labels:
+    app: upf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: upf
+  template:
+    metadata:
+      labels:
+        app: upf
+      annotations:
+        ovn.kubernetes.io/ip_address: "172.22.0.8"  # Replace with your desired IP
+        ovn.kubernetes.io/logical_switch: "my5gs-subnet"
+    spec:
+      nodeName: lab-thinkstation-p3-tower
+      containers:
+        - name: upf
+          image: localhost:5000/docker_open5gs:v1
+          env:
+            - name: COMPONENT_NAME
+              value: upf-1
+          envFrom:
+            - configMapRef:
+                name: my5gs-config  # Ensure this ConfigMap exists in the `my5gs` namespace
+          volumeMounts:
+            - mountPath: /mnt/upf
+              name: upf-volume
+            - mountPath: /open5gs/install/var/log/open5gs
+              name: log-volume
+            - mountPath: /etc/timezone
+              name: timezone
+              readOnly: true
+            - mountPath: /etc/localtime
+              name: localtime
+              readOnly: true
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"]
+            privileged: true
+#          sysctls:
+#            - name: net.ipv4.ip_forward
+#              value: "1"
+            # Uncomment if needed
+            # - name: net.ipv6.conf.all.disable_ipv6
+            #   value: "0"
+      volumes:
+        - name: upf-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/upf  # Adjust path as necessary
+        - name: log-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/log  # Adjust path as necessary
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: upf
+  namespace: my5gs
+spec:
+  ports:
+    - protocol: UDP
+      port: 2152
+      targetPort: 2152
+      name: gtp-u
+    - protocol: UDP
+      port: 8805
+      targetPort: 8805
+      name: none
+    - protocol: TCP
+      port: 9091
+      targetPort: 9091
+      name: metrics
+  selector:
+    app: upf
+  type: NodePort
+

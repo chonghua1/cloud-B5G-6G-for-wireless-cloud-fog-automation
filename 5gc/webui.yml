@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webui
+  namespace: my5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webui
+  template:
+    metadata:
+      labels:
+        app: webui
+      annotations:
+        ovn.kubernetes.io/ip_address: "172.22.0.26"  # Replace with your desired IP
+        ovn.kubernetes.io/logical_switch: "my5gs-subnet"
+    spec:
+      nodeName: lab-thinkstation-p3-tower
+      containers:
+        - name: webui
+          image: localhost:5000/docker_open5gs:v1
+          ports:
+            - containerPort: 9999
+              hostPort: 9999
+              protocol: TCP
+          env:
+            - name: COMPONENT_NAME
+              value: webui
+          envFrom:
+            - configMapRef:
+                name: my5gs-config  # Reference your ConfigMap here
+          volumeMounts:
+            - mountPath: /mnt/webui
+              name: webui-volume
+            - mountPath: /etc/timezone
+              name: timezone
+              readOnly: true
+            - mountPath: /etc/localtime
+              name: localtime
+              readOnly: true
+      volumes:
+        - name: webui-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/webui  # Adjust path as necessary
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+
+              #---
+              #apiVersion: v1
+              #kind: Service
+              #metadata:
+              #  name: webui
+              #spec:
+              #  ports:
+              #    - protocol: TCP
+              #      port: 9999
+              #      targetPort: 9999
+              #  selector:
+              #    app: webui
+              #  type: NodePort  # Use LoadBalancer if external access is needed
+

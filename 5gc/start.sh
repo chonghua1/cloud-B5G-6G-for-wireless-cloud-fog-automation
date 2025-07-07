@@ -1,0 +1,17 @@
+#sudo kubectl apply -f mogo.yml
+#sudo kubectl apply -f webui.yml
+sudo kubectl apply -f nrf.yml
+sudo kubectl apply -f scp.yml
+sudo kubectl apply -f ausf.yml
+sudo kubectl apply -f udr.yml
+sudo kubectl apply -f udm.yml
+sudo kubectl apply -f pcf.yml
+sudo kubectl apply -f bsf.yml
+sudo kubectl apply -f amf.yml
+sudo kubectl apply -f smf.yml
+sudo kubectl apply -f smf2.yml
+sudo kubectl apply -f upf.yml
+sudo kubectl apply -f upf2.yml
+sudo kubectl apply -f nssf.yml
+#sudo kubectl apply -f metrics.yml
+#sudo kubectl apply -f grafana.yml

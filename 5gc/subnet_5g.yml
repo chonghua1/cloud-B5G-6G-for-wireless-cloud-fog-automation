@@ -1,0 +1,13 @@
+apiVersion: kubeovn.io/v1
+kind: Subnet
+metadata:
+  name: my5gs-subnet
+  namespace: my5gs
+spec:
+  protocol: IPv4
+  cidrBlock: 172.22.0.0/24
+  gateway: 172.22.0.1
+  gatewayType: distributed
+  excludeIps: ["172.22.0.1"]
+  natOutgoing: false
+  private: false

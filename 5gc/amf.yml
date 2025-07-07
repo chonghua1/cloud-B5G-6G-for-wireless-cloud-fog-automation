@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: amf
+  namespace: my5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: amf
+  template:
+    metadata:
+      labels:
+        app: amf
+      annotations:
+        ovn.kubernetes.io/ip_address: "172.22.0.10"  # Replace with your desired IP
+        ovn.kubernetes.io/logical_switch: "my5gs-subnet"  # Specify the subnet
+    spec:
+      nodeName: lab-thinkstation-p3-tower
+      containers:
+        - name: amf
+          image: localhost:5000/docker_open5gs:v1
+          ports:
+            - containerPort: 38412
+              hostPort: 38412
+              protocol: SCTP
+          env:
+            - name: COMPONENT_NAME
+              value: amf-1
+          envFrom:
+            - configMapRef:
+                name: my5gs-config  # Ensure this ConfigMap exists in the `my5gs` namespace
+          volumeMounts:
+            - mountPath: /mnt/amf
+              name: amf-volume
+            - mountPath: /open5gs/install/var/log/open5gs
+              name: log-volume
+            - mountPath: /etc/timezone
+              name: timezone
+              readOnly: true
+            - mountPath: /etc/localtime
+              name: localtime
+              readOnly: true
+      volumes:
+        - name: amf-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/amf  # Adjust path as necessary
+        - name: log-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/log   # Adjust path as necessary
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: amf
+  namespace: my5gs
+spec:
+  ports:
+    - protocol: SCTP
+      port: 38412
+      targetPort: 38412
+      name: gtp-c
+    - protocol: TCP
+      port: 7777
+      targetPort: 7777
+      name: internal
+    - protocol: TCP
+      port: 9091
+      targetPort: 9091
+      name: metrics
+  selector:
+    app: amf
+  type: ClusterIP
+

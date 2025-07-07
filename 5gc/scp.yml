@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scp
+  namespace: my5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scp
+  template:
+    metadata:
+      labels:
+        app: scp
+      annotations:
+        ovn.kubernetes.io/ip_address: "172.22.0.35"  # Replace with your desired IP
+        ovn.kubernetes.io/logical_switch: "my5gs-subnet"
+    spec:
+      nodeName: lab-thinkstation-p3-tower
+      containers:
+        - name: scp
+          image: localhost:5000/docker_open5gs:v1
+          env:
+            - name: COMPONENT_NAME
+              value: scp-1
+          envFrom:
+            - configMapRef:
+                name: my5gs-config  # Ensure this ConfigMap exists in the `my5gs` namespace
+          volumeMounts:
+            - mountPath: /mnt/scp
+              name: scp-volume
+            - mountPath: /open5gs/install/var/log/open5gs
+              name: log-volume
+            - mountPath: /etc/timezone
+              name: timezone
+              readOnly: true
+            - mountPath: /etc/localtime
+              name: localtime
+              readOnly: true
+      volumes:
+        - name: scp-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/scp  # Adjust path as necessary
+        - name: log-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/log  # Adjust path as necessary
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scp
+  namespace: my5gs
+spec:
+  ports:
+    - protocol: TCP
+      port: 7777
+      targetPort: 7777
+  selector:
+    app: scp
+  type: ClusterIP
+

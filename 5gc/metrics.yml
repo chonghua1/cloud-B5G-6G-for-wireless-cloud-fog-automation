@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics
+  namespace: my5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics
+  template:
+    metadata:
+      labels:
+        app: metrics
+      annotations:
+        ovn.kubernetes.io/ip_address: "172.22.0.36"  # Replace with your desired IP
+        ovn.kubernetes.io/logical_switch: "my5gs-subnet"  # Specify the subnet
+    spec:
+      nodeName: lab-thinkstation-p3-tower
+      containers:
+        - name: metrics
+          image: localhost:5000/docker_open5gs:v1
+          env:
+            - name: COMPONENT_NAME
+              value: metrics-1
+          envFrom:
+            - configMapRef:
+                name: my5gs-config  # Ensure this ConfigMap exists in the `my5gs` namespace
+          volumeMounts:
+            - mountPath: /mnt/metrics
+              name: metrics-volume
+            - mountPath: /etc/timezone
+              name: timezone
+              readOnly: true
+            - mountPath: /etc/localtime
+              name: localtime
+              readOnly: true
+      volumes:
+        - name: metrics-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/metrics  # Adjust path as necessary
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics
+  namespace: my5gs
+spec:
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+  selector:
+    app: metrics
+  type: ClusterIP
+

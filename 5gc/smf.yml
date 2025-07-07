@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smf
+  namespace: my5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smf
+  template:
+    metadata:
+      labels:
+        app: smf
+      annotations:
+        ovn.kubernetes.io/ip_address: "172.22.0.7"  # Replace with your desired IP
+        ovn.kubernetes.io/logical_switch: "my5gs-subnet"  # Specify the subnet
+    spec:
+      nodeName: lab-thinkstation-p3-tower
+      containers:
+        - name: smf
+          image: localhost:5000/docker_open5gs:v1
+          env:
+            - name: COMPONENT_NAME
+              value: smf-1
+            - name: DEPLOY_MODE
+              value: 5G
+          envFrom:
+            - configMapRef:
+                name: my5gs-config  # Ensure this ConfigMap exists in the `my5gs` namespace
+          volumeMounts:
+            - mountPath: /mnt/smf
+              name: smf-volume
+            - mountPath: /open5gs/install/var/log/open5gs
+              name: log-volume
+            - mountPath: /etc/timezone
+              name: timezone
+              readOnly: true
+            - mountPath: /etc/localtime
+              name: localtime
+              readOnly: true
+      volumes:
+        - name: smf-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/smf  # Adjust path as necessary
+        - name: log-volume
+          hostPath:
+            path: /home/lab/k3s/5gs/docker_open5gs/log  # Adjust path as necessary
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smf
+  namespace: my5gs
+spec:
+  ports:
+    - protocol: UDP
+      port: 3868
+      targetPort: 3868
+      name: udp1
+    - protocol: TCP
+      port: 3868
+      targetPort: 3868
+      name: udp2
+    - protocol: SCTP
+      port: 3868
+      targetPort: 3868
+      name: sctp
+    - protocol: UDP
+      port: 5868
+      targetPort: 5868
+      name: udp3
+    - protocol: TCP
+      port: 5868
+      targetPort: 5868
+      name: tcp1
+    - protocol: SCTP
+      port: 5868
+      targetPort: 5868
+      name: sctp2
+    - protocol: UDP
+      port: 8805
+      targetPort: 8805
+      name: udp4
+    - protocol: UDP
+      port: 2123
+      targetPort: 2123
+      name: udp5
+    - protocol: TCP
+      port: 7777
+      targetPort: 7777
+      name: tcp2
+    - protocol: TCP
+      port: 9091
+      targetPort: 9091
+      name: tcp3
+  selector:
+    app: smf
+  type: ClusterIP
+
